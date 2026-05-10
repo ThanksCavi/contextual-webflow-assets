@@ -13,6 +13,7 @@
   const END_ARROW_SELECTOR = '.sa-arrows-end';
   const INTRO_ARROW_SELECTOR = '.sa-intro-arrow';
   const FINAL_REVEAL_SELECTOR = '[data-sa-card-description]';
+  const HEADING_SELECTOR = '.sa-heading';
   const FOCUSABLE_SELECTOR = 'a, button, input, select, textarea, [tabindex]';
 
   const READY_CLASS = 'is-sa-ready';
@@ -29,6 +30,8 @@
   const DESKTOP_QUERY = '(min-width: 992px) and (prefers-reduced-motion: no-preference)';
   const RESIZE_REFRESH_DELAY_MS = 160;
   const SCENE_ONLY_PIN_OFFSET = 40;
+  const SCENE_LIFT_MAX_VIEWPORT_RATIO = 0.22;
+  const SCENE_LIFT_TARGET_CENTER_RATIO = 0.52;
 
   const LAYOUT = {
     width: 1280,
@@ -85,6 +88,7 @@
       scene,
       pinFrame,
       pinLayout: sticky.querySelector('.sa-pin-layout') || sticky,
+      heading: root.querySelector(HEADING_SELECTOR),
       panel,
       cards,
       outcome: root.querySelector(OUTCOME_SELECTOR),
@@ -208,6 +212,10 @@
     timeline.set([state.cards.top, state.cards.bottom, state.cards.source], {
       '--sa-blue-overlay-opacity': 0,
     }, 0);
+    timeline.set([state.heading, state.scene].filter(Boolean), {
+      autoAlpha: 1,
+      y: 0,
+    }, 0);
 
     timeline.to([state.cards.top, state.cards.bottom], {
       x: () => getScaledX(state, LAYOUT.stackedExitX),
@@ -215,6 +223,21 @@
       duration: 0.42,
       ease: 'power1.inOut',
     }, 0.14);
+
+    if (state.heading) {
+      timeline.to(state.heading, {
+        autoAlpha: 0,
+        y: () => -getHeadingExitY(state),
+        duration: 0.28,
+        ease: 'power1.inOut',
+      }, 0.26);
+    }
+
+    timeline.to(state.scene, {
+      y: () => -getSceneLift(state),
+      duration: 0.30,
+      ease: 'power1.inOut',
+    }, 0.34);
 
     if (branchLines.length > 0) {
       timeline.to(branchLines, {
@@ -322,6 +345,40 @@
 
   function getScaledX(state, value) {
     return value * (state.panel.getBoundingClientRect().width / LAYOUT.width);
+  }
+
+  function getHeadingExitY(state) {
+    if (!state.heading) return 0;
+
+    const headingRect = state.heading.getBoundingClientRect();
+
+    return Math.ceil(Math.max(headingRect.height + 24, headingRect.bottom + 24));
+  }
+
+  function getSceneLift(state) {
+    const sceneRect = state.scene.getBoundingClientRect();
+    const pinLayoutRect = state.pinLayout.getBoundingClientRect();
+    const sceneTop = sceneRect.top - pinLayoutRect.top;
+    const sceneCenter = sceneTop + sceneRect.height / 2;
+    const targetCenter = window.innerHeight * SCENE_LIFT_TARGET_CENTER_RATIO;
+    const neededLift = sceneCenter - targetCenter;
+
+    if (neededLift <= 0) return 0;
+
+    const maxViewportLift = window.innerHeight * SCENE_LIFT_MAX_VIEWPORT_RATIO;
+    const minSceneTop = Math.min(72, window.innerHeight * 0.08);
+    const maxTopLift = Math.max(0, sceneTop - minSceneTop);
+    const maxHeadingLift = state.heading ? getHeadingLiftLimit(state, sceneTop, pinLayoutRect) : maxViewportLift;
+
+    return Math.ceil(Math.max(0, Math.min(neededLift, maxViewportLift, maxTopLift, maxHeadingLift)));
+  }
+
+  function getHeadingLiftLimit(state, sceneTop, pinLayoutRect) {
+    const headingRect = state.heading.getBoundingClientRect();
+    const headingBottom = headingRect.bottom - pinLayoutRect.top;
+    const headingGap = Math.max(0, sceneTop - headingBottom);
+
+    return Math.max(0, headingRect.height + headingGap);
   }
 
   function getScrollDistance(state) {
@@ -749,6 +806,8 @@
       state.cards.top,
       state.cards.bottom,
       state.cards.final,
+      ...(state.heading ? [state.heading] : []),
+      state.scene,
       ...state.lines,
       ...(state.outcome ? [state.outcome] : []),
       ...(state.endArrow ? [state.endArrow] : []),
