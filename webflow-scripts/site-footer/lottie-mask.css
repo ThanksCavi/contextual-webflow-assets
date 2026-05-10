@@ -1,0 +1,83 @@
+/* Lottie Component */
+.lottie-component {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+}
+
+[data-lottie-mask] {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  height: auto;
+}
+
+[data-lottie-mask]:has(.lm-stage) {
+  width: 889px;
+  max-width: 205%;
+}
+
+[data-lottie-mask] .lm-stage,
+[data-lottie-mask] .lm-visible {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+[data-lottie-mask] .lm-visible {
+  z-index: 1;
+}
+
+[data-lottie-mask] .lm-stage {
+  z-index: 2;
+}
+
+[data-lottie-mask] .lm-stage,
+[data-lottie-mask] .lm-visible svg {
+  display: block;
+}
+
+[data-lottie-mask] .lm-mask-source {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+[data-lottie-mask] > .lottie-builder-placeholder {
+  position: relative;
+  z-index: 0;
+  display: block;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #6881ff;
+  background-position: center;
+  background-size: cover;
+}
+
+[data-lottie-mask] > .lottie-builder-placeholder img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+html:not(.wf-design-mode) [data-lottie-mask]:not([data-lottie-mask-ready="static"]):not([data-lottie-mask-ready="error"]) > .lottie-builder-placeholder {
+  visibility: hidden;
+}
+
+[data-lottie-mask] .lm-mask-alpha * {
+  fill: #fff !important;
+  stroke: #fff !important;
+  fill-opacity: 1 !important;
+  stroke-opacity: 1 !important;
+}
+/* End Lottie Component */
