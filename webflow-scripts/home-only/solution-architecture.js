@@ -14,7 +14,6 @@
   const INTRO_ARROW_EMBED_SELECTOR = '.sa-intro-arrow-embed';
   const INTRO_ARROW_SELECTOR = '.sa-intro-arrow';
   const FINAL_REVEAL_SELECTOR = '[data-sa-card-description]';
-  const HEADING_SELECTOR = '.sa-heading';
   const FOCUSABLE_SELECTOR = 'a, button, input, select, textarea, [tabindex]';
 
   const READY_CLASS = 'is-sa-ready';
@@ -30,9 +29,7 @@
 
   const DESKTOP_QUERY = '(min-width: 992px) and (prefers-reduced-motion: no-preference)';
   const RESIZE_REFRESH_DELAY_MS = 160;
-  const SCENE_ONLY_PIN_OFFSET = 40;
-  const SCENE_LIFT_MAX_VIEWPORT_RATIO = 0.22;
-  const SCENE_LIFT_TARGET_CENTER_RATIO = 0.52;
+  const MIN_SCENE_PIN_OFFSET = 24;
 
   const LAYOUT = {
     width: 1280,
@@ -89,7 +86,6 @@
       scene,
       pinFrame,
       pinLayout: sticky.querySelector('.sa-pin-layout') || sticky,
-      heading: root.querySelector(HEADING_SELECTOR),
       panel,
       cards,
       outcome: root.querySelector(OUTCOME_SELECTOR),
@@ -105,6 +101,7 @@
       timeline: null,
       lineTween: null,
       introLineTween: null,
+      outcomeTween: null,
       phase: '',
     };
 
@@ -173,11 +170,11 @@
 
     const pinTarget = getPinTarget(state);
     const triggerTarget = pinTarget === state.scene ? state.scene : state.stage;
-    const pinStart = getPinStart(state, pinTarget);
 
     prepareLines(state, gsap);
     createLineReveal(branchLines, state, gsap);
     createIntroArrowReveal(state, gsap);
+    createOutcomeReveal(state, gsap);
 
     const timeline = gsap.timeline({
       defaults: {
@@ -185,7 +182,7 @@
       },
       scrollTrigger: {
         trigger: triggerTarget,
-        start: pinStart,
+        start: () => getPinStart(state, pinTarget),
         end: () => `+=${getScrollDistance(state)}`,
         scrub: true,
         pin: pinTarget,
@@ -213,10 +210,6 @@
     timeline.set([state.cards.top, state.cards.bottom, state.cards.source], {
       '--sa-blue-overlay-opacity': 0,
     }, 0);
-    timeline.set([state.heading, state.scene].filter(Boolean), {
-      autoAlpha: 1,
-      y: 0,
-    }, 0);
 
     timeline.to([state.cards.top, state.cards.bottom], {
       x: () => getScaledX(state, LAYOUT.stackedExitX),
@@ -224,21 +217,6 @@
       duration: 0.42,
       ease: 'power1.inOut',
     }, 0.14);
-
-    if (state.heading) {
-      timeline.to(state.heading, {
-        autoAlpha: 0,
-        y: () => -getHeadingExitY(state),
-        duration: 0.28,
-        ease: 'power1.inOut',
-      }, 0.26);
-    }
-
-    timeline.to(state.scene, {
-      y: () => -getSceneLift(state),
-      duration: 0.30,
-      ease: 'power1.inOut',
-    }, 0.34);
 
     if (branchLines.length > 0) {
       timeline.to(branchLines, {
@@ -270,8 +248,6 @@
       ease: 'power2.out',
     }, 0.40);
 
-    addOutcomeReveal(state, timeline, gsap);
-
     timeline.to({}, {
       duration: 0.08,
     }, 0.98);
@@ -301,6 +277,15 @@
 
         state.introLineTween.kill();
         state.introLineTween = null;
+      }
+
+      if (state.outcomeTween) {
+        if (state.outcomeTween.scrollTrigger) {
+          state.outcomeTween.scrollTrigger.kill();
+        }
+
+        state.outcomeTween.kill();
+        state.outcomeTween = null;
       }
 
       if (state.timeline === timeline) {
@@ -348,40 +333,6 @@
     return value * (state.panel.getBoundingClientRect().width / LAYOUT.width);
   }
 
-  function getHeadingExitY(state) {
-    if (!state.heading) return 0;
-
-    const headingRect = state.heading.getBoundingClientRect();
-
-    return Math.ceil(Math.max(headingRect.height + 24, headingRect.bottom + 24));
-  }
-
-  function getSceneLift(state) {
-    const sceneRect = state.scene.getBoundingClientRect();
-    const pinLayoutRect = state.pinLayout.getBoundingClientRect();
-    const sceneTop = sceneRect.top - pinLayoutRect.top;
-    const sceneCenter = sceneTop + sceneRect.height / 2;
-    const targetCenter = window.innerHeight * SCENE_LIFT_TARGET_CENTER_RATIO;
-    const neededLift = sceneCenter - targetCenter;
-
-    if (neededLift <= 0) return 0;
-
-    const maxViewportLift = window.innerHeight * SCENE_LIFT_MAX_VIEWPORT_RATIO;
-    const minSceneTop = Math.min(72, window.innerHeight * 0.08);
-    const maxTopLift = Math.max(0, sceneTop - minSceneTop);
-    const maxHeadingLift = state.heading ? getHeadingLiftLimit(state, sceneTop, pinLayoutRect) : maxViewportLift;
-
-    return Math.ceil(Math.max(0, Math.min(neededLift, maxViewportLift, maxTopLift, maxHeadingLift)));
-  }
-
-  function getHeadingLiftLimit(state, sceneTop, pinLayoutRect) {
-    const headingRect = state.heading.getBoundingClientRect();
-    const headingBottom = headingRect.bottom - pinLayoutRect.top;
-    const headingGap = Math.max(0, sceneTop - headingBottom);
-
-    return Math.max(0, headingRect.height + headingGap);
-  }
-
   function getScrollDistance(state) {
     const sceneWidth = state.panel.getBoundingClientRect().width || window.innerWidth;
 
@@ -396,10 +347,7 @@
       return pinFrameFitsViewport ? state.pinFrame : state.scene;
     }
 
-    const layoutHeight = getCorePinLayoutHeight(state);
-    const layoutFitsViewport = layoutHeight <= window.innerHeight + 1;
-
-    return layoutFitsViewport ? state.sticky : state.scene;
+    return state.scene;
   }
 
   function getCorePinFrameHeight(state, pinFrame) {
@@ -412,22 +360,20 @@
     return Math.max(0, pinFrameRect.height - outcomeHeight);
   }
 
-  function getCorePinLayoutHeight(state) {
-    const pinLayoutRect = state.pinLayout.getBoundingClientRect();
-
-    if (!state.outcome) return pinLayoutRect.height;
-
-    const outcomeHeight = state.outcome.getBoundingClientRect().height;
-
-    return Math.max(0, pinLayoutRect.height - outcomeHeight);
-  }
-
   function getPinStart(state, pinTarget) {
     if (pinTarget === state.pinFrame) {
       return `top ${getRootTopOffset(state)}px`;
     }
 
-    return pinTarget === state.scene ? `top ${SCENE_ONLY_PIN_OFFSET}px` : 'top top';
+    if (pinTarget === state.scene) {
+      const panelHeight = state.panel.getBoundingClientRect().height || state.scene.getBoundingClientRect().height;
+      const centeredOffset = Math.round((window.innerHeight - panelHeight) / 2);
+      const offset = Math.max(MIN_SCENE_PIN_OFFSET, centeredOffset);
+
+      return `top ${offset}px`;
+    }
+
+    return 'top top';
   }
 
   function getRootTopOffset(state) {
@@ -543,7 +489,7 @@
     state.introLineTween = tl;
   }
 
-  function addOutcomeReveal(state, timeline, gsap) {
+  function createOutcomeReveal(state, gsap) {
     if (!state.outcome && !state.endArrow && !state.outcomeCard) return;
 
     const drawLines = getFinalArrowLines(state);
@@ -563,6 +509,18 @@
         y: 24,
       });
     }
+
+    const timeline = gsap.timeline({
+      scrollTrigger: {
+        trigger: state.outcome || state.endArrow,
+        start: 'top 82%',
+        end: 'bottom 58%',
+        scrub: true,
+        invalidateOnRefresh: true,
+      },
+    });
+
+    state.outcomeTween = timeline;
 
     if (hasStrokeDraw) {
       drawLines.forEach(line => {
@@ -594,20 +552,20 @@
 
       timeline.set(drawLines, {
         visibility: 'visible',
-      }, 0.78);
+      }, 0);
 
       timeline.to(drawLines, {
         opacity: (_, target) => getStoredTargetOpacity(target),
         strokeDashoffset: 0,
-        duration: 0.16,
+        duration: 0.60,
         ease: 'power2.out',
-      }, 0.78);
+      }, 0);
 
       if (arrowheads.length > 0) {
         timeline.to(arrowheads, {
           opacity: (_, target) => getStoredTargetOpacity(target),
-          duration: 0.06,
-        }, 0.90);
+          duration: 0.14,
+        }, 0.52);
       }
     } else if (state.endArrow) {
       gsap.set(state.endArrow, {
@@ -619,18 +577,18 @@
       timeline.to(state.endArrow, {
         opacity: endArrowOpacity,
         clipPath: 'inset(0 0 0% 0)',
-        duration: 0.16,
+        duration: 0.60,
         ease: 'power2.out',
-      }, 0.78);
+      }, 0);
     }
 
     if (state.outcomeCard) {
       timeline.to(state.outcomeCard, {
         autoAlpha: 1,
         y: 0,
-        duration: 0.14,
+        duration: 0.24,
         ease: 'power2.out',
-      }, 0.86);
+      }, 0.70);
     }
   }
 
@@ -809,7 +767,6 @@
       state.cards.top,
       state.cards.bottom,
       state.cards.final,
-      ...(state.heading ? [state.heading] : []),
       state.scene,
       ...state.lines,
       ...(state.outcome ? [state.outcome] : []),
