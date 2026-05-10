@@ -91,19 +91,11 @@
 		var elements = [];
 		var nav = document.querySelector('.navbar.w-nav');
 		var markedItems = hero.querySelectorAll('[data-hero-intro-reveal]');
-		var contentItems = hero.querySelectorAll('.hsp-column-content > *');
-		var label = hero.querySelector('.mcl-label');
-		var brands = hero.querySelector('.customer-brands-carousel');
 
 		if (nav) elements.push(nav);
 		Array.prototype.forEach.call(markedItems, function(item) {
 			elements.push(item);
 		});
-		Array.prototype.forEach.call(contentItems, function(item) {
-			elements.push(item);
-		});
-		if (label) elements.push(label);
-		if (brands) elements.push(brands);
 
 		return elements.filter(function(el, index, list) {
 			return el && list.indexOf(el) === index;
