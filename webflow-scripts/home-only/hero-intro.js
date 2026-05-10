@@ -14,13 +14,19 @@
 	var REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 	var READY_TIMEOUT = 5500;
 	var INTRO_HOLD_DURATION = 2200;
-	var LOTTIE_MOVE_DURATION = 1250;
-	var FIELD_REVEAL_DELAY = 2500;
-	var CONTENT_DURATION = 1250;
-	var CONTENT_START_DELAY = 2700;
-	var CONTENT_STAGGER = 120;
+	var LOTTIE_MOVE_DURATION = 1350;
+	var FIELD_REVEAL_DELAY = 2460;
+	var PRIMARY_REVEAL_DELAY = 2820;
+	var SECONDARY_REVEAL_DELAY = 3260;
+	var NAV_REVEAL_DELAY = 3220;
+	var PRIMARY_REVEAL_DURATION = 1650;
+	var SECONDARY_REVEAL_DURATION = 1500;
+	var NAV_REVEAL_DURATION = 1350;
+	var PRIMARY_STAGGER = 115;
+	var SECONDARY_STAGGER = 105;
 	var MOVE_EASE = 'cubic-bezier(0.19, 1, 0.22, 1)';
 	var REVEAL_EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
+	var NAV_REVEAL_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
 	function onReady(fn) {
 		if (document.readyState === 'loading') {
@@ -89,30 +95,56 @@
 		});
 	}
 
-	function getRevealElements(hero) {
-		var elements = [];
+	function getRevealGroups(hero) {
 		var nav = document.querySelector('.navbar.w-nav');
-		var markedItems = hero.querySelectorAll('[data-hero-intro-reveal]');
+		var markedItems = Array.prototype.slice.call(hero.querySelectorAll('[data-hero-intro-reveal]'));
+		var primary = [];
+		var secondary = [];
 
-		if (nav) elements.push(nav);
-		Array.prototype.forEach.call(markedItems, function(item) {
-			elements.push(item);
+		markedItems.forEach(function(item, index) {
+			var role = (item.getAttribute('data-hero-intro-reveal') || '').trim().toLowerCase();
+
+			if (role === 'secondary' || role === 'supporting' || role === 'brands' || role === 'logos') {
+				secondary.push(item);
+				return;
+			}
+
+			if (role === 'primary' || role === 'content') {
+				primary.push(item);
+				return;
+			}
+
+			if (index < 3) {
+				primary.push(item);
+			} else {
+				secondary.push(item);
+			}
 		});
 
+		return {
+			nav: nav,
+			primary: primary,
+			secondary: secondary,
+			all: uniqueElements((nav ? [nav] : []).concat(primary, secondary))
+		};
+	}
+
+	function uniqueElements(elements) {
 		return elements.filter(function(el, index, list) {
 			return el && list.indexOf(el) === index;
 		});
 	}
 
-	function setInitialStyles(lottieShell, revealElements) {
+	function setInitialStyles(lottieShell, revealGroups) {
 		lottieShell.style.opacity = '1';
 		lottieShell.style.transformOrigin = '50% 50%';
 		lottieShell.style.willChange = 'transform';
 
-		revealElements.forEach(function(el) {
+		revealGroups.all.forEach(function(el) {
 			el.style.opacity = '0';
-			el.style.transform = 'translate3d(0, 24px, 0)';
-			el.style.willChange = 'opacity, transform';
+			el.style.transform = el === revealGroups.nav ? 'translate3d(0, -22px, 0)' : 'translate3d(0, 34px, 0)';
+			el.style.filter = 'blur(8px)';
+			el.style.willChange = 'opacity, transform, filter';
 		});
 	}
 
@@ -125,6 +157,7 @@
 		revealElements.forEach(function(el) {
 			el.style.opacity = '';
 			el.style.transform = '';
+			el.style.filter = '';
 			el.style.willChange = '';
 		});
 	}
@@ -169,10 +202,36 @@
 		return wait((options.delay || 0) + (options.duration || 0));
 	}
 
-	function runIntro(hero, lottieShell, revealElements) {
+	function addRevealAnimation(animations, el, options) {
+		animations.push(animateElement(el, [
+			{
+				opacity: 0,
+				transform: options.fromTransform,
+				filter: 'blur(8px)'
+			},
+			{
+				opacity: 0.86,
+				transform: options.settleTransform,
+				filter: 'blur(1px)',
+				offset: 0.72
+			},
+			{
+				opacity: 1,
+				transform: 'translate3d(0, 0, 0)',
+				filter: 'blur(0px)'
+			}
+		], {
+			duration: options.duration,
+			delay: options.delay,
+			easing: options.easing,
+			fill: 'forwards'
+		}));
+	}
+
+	function runIntro(hero, lottieShell, revealGroups) {
 		var rect = lottieShell.getBoundingClientRect();
 		if (!rect.width || !rect.height) {
-			revealStatic(hero, lottieShell, revealElements);
+			revealStatic(hero, lottieShell, revealGroups.all);
 			return Promise.resolve();
 		}
 
@@ -180,7 +239,7 @@
 		var startTransform = 'translate3d(' + start.x.toFixed(2) + 'px, ' + start.y.toFixed(2) + 'px, 0) scale(' + start.scale.toFixed(3) + ')';
 
 		hero.classList.add('is-hero-intro-running');
-		setInitialStyles(lottieShell, revealElements);
+		setInitialStyles(lottieShell, revealGroups);
 		lottieShell.style.transform = startTransform;
 
 		return nextFrame().then(function() {
@@ -200,24 +259,42 @@
 				})
 			];
 
-			revealElements.forEach(function(el, index) {
-				animations.push(animateElement(el, [
-					{ opacity: 0, transform: 'translate3d(0, 24px, 0)' },
-					{ opacity: 1, transform: 'translate3d(0, 0, 0)' }
-				], {
-					duration: CONTENT_DURATION,
-					delay: CONTENT_START_DELAY + index * CONTENT_STAGGER,
-					easing: REVEAL_EASE,
-					fill: 'forwards'
-				}));
+			revealGroups.primary.forEach(function(el, index) {
+				addRevealAnimation(animations, el, {
+					fromTransform: 'translate3d(0, 34px, 0)',
+					settleTransform: 'translate3d(0, -3px, 0)',
+					duration: PRIMARY_REVEAL_DURATION,
+					delay: PRIMARY_REVEAL_DELAY + index * PRIMARY_STAGGER,
+					easing: REVEAL_EASE
+				});
 			});
+
+			revealGroups.secondary.forEach(function(el, index) {
+				addRevealAnimation(animations, el, {
+					fromTransform: 'translate3d(0, 30px, 0)',
+					settleTransform: 'translate3d(0, -2px, 0)',
+					duration: SECONDARY_REVEAL_DURATION,
+					delay: SECONDARY_REVEAL_DELAY + index * SECONDARY_STAGGER,
+					easing: REVEAL_EASE
+				});
+			});
+
+			if (revealGroups.nav) {
+				addRevealAnimation(animations, revealGroups.nav, {
+					fromTransform: 'translate3d(0, -22px, 0)',
+					settleTransform: 'translate3d(0, 2px, 0)',
+					duration: NAV_REVEAL_DURATION,
+					delay: NAV_REVEAL_DELAY,
+					easing: NAV_REVEAL_EASE
+				});
+			}
 
 			return Promise.all(animations);
 		}).then(function() {
 			hero.classList.remove('is-hero-intro-running');
 			hero.classList.add('is-hero-intro-complete');
 			hero.setAttribute('data-hero-intro-ready', 'complete');
-			clearInlineStyles(lottieShell, revealElements);
+			clearInlineStyles(lottieShell, revealGroups.all);
 		});
 	}
 
@@ -229,29 +306,29 @@
 
 		var lottieEl = hero.querySelector(LOTTIE_SELECTOR);
 		var lottieShell = lottieEl && (lottieEl.closest('.lottie-component') || lottieEl);
-		var revealElements = getRevealElements(hero);
+		var revealGroups = getRevealGroups(hero);
 
 		if (!lottieEl || !lottieShell || prefersReducedMotion() || isMobileViewport()) {
-			revealStatic(hero, lottieShell, revealElements);
+			revealStatic(hero, lottieShell, revealGroups.all);
 			return;
 		}
 
 		if (typeof window.lottie === 'undefined') {
-			revealStatic(hero, lottieShell, revealElements);
+			revealStatic(hero, lottieShell, revealGroups.all);
 			return;
 		}
 
 		waitForLottie(lottieEl).then(function(isReady) {
 			if (!isReady) {
-				revealStatic(hero, lottieShell, revealElements);
+				revealStatic(hero, lottieShell, revealGroups.all);
 				return;
 			}
 
 			return nextFrame().then(function() {
-				return runIntro(hero, lottieShell, revealElements);
+				return runIntro(hero, lottieShell, revealGroups);
 			});
 		}).catch(function(err) {
-			revealStatic(hero, lottieShell, revealElements);
+			revealStatic(hero, lottieShell, revealGroups.all);
 			if (window.console && typeof window.console.warn === 'function') {
 				window.console.warn('[hero-intro] Intro skipped:', err);
 			}
