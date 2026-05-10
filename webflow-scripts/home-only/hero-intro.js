@@ -13,10 +13,11 @@
 	var MOBILE_QUERY = '(max-width: 767px)';
 	var REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 	var READY_TIMEOUT = 5500;
-	var LOTTIE_DURATION = 1650;
-	var CONTENT_DURATION = 720;
-	var CONTENT_START_DELAY = 780;
-	var CONTENT_STAGGER = 105;
+	var INTRO_HOLD_DURATION = 2000;
+	var LOTTIE_MOVE_DURATION = 1000;
+	var CONTENT_DURATION = 1000;
+	var CONTENT_START_DELAY = 2500;
+	var CONTENT_STAGGER = 95;
 	var EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
 
 	function onReady(fn) {
@@ -187,7 +188,8 @@
 					{ transform: startTransform, opacity: 1 },
 					{ transform: 'translate3d(0, 0, 0) scale(1)', opacity: 1 }
 				], {
-					duration: LOTTIE_DURATION,
+					duration: LOTTIE_MOVE_DURATION,
+					delay: INTRO_HOLD_DURATION,
 					easing: EASE,
 					fill: 'forwards'
 				})
