@@ -52,12 +52,12 @@
 
   [data-sa-root].is-sa-ready .sa-intro-arrow-embed {
     position: absolute;
-    left: 50%;
-    top: 0;
+    left: 52%;
+    top: clamp(40px, 5vw, 88px);
     z-index: 0;
     width: min(353px, 34vw);
     max-width: 353px;
-    transform: translate(-25%, -100%);
+    transform: translate(-12%, -100%);
     pointer-events: none;
   }
 
