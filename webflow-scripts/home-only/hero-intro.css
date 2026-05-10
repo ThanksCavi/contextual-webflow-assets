@@ -1,10 +1,7 @@
 /* Hero Lottie Intro */
 @media screen and (min-width: 768px) {
 	html:not(.wf-design-mode) body:has(.hero-spotlight[data-hero-intro="home"]) .navbar,
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"]:not(.is-hero-intro-static):not(.is-hero-intro-complete) [data-hero-intro-reveal],
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"]:not(.is-hero-intro-static):not(.is-hero-intro-complete) .hsp-column-content > *,
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"]:not(.is-hero-intro-static):not(.is-hero-intro-complete) .mcl-label,
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"]:not(.is-hero-intro-static):not(.is-hero-intro-complete) .customer-brands-carousel {
+	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"]:not(.is-hero-intro-static):not(.is-hero-intro-complete) [data-hero-intro-reveal] {
 		opacity: 0;
 		transform: translateY(24px);
 		animation: heroIntroFailsafe 1ms linear 6500ms forwards;
@@ -17,9 +14,6 @@
 
 	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-running .hsp-column-media,
 	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-running [data-hero-intro-reveal],
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-running .hsp-column-content > *,
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-running .mcl-label,
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-running .customer-brands-carousel,
 	html:not(.wf-design-mode) body:has(.hero-spotlight[data-hero-intro="home"].is-hero-intro-running) .navbar {
 		animation: none;
 	}
@@ -31,14 +25,8 @@
 
 	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-static .hsp-column-media,
 	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-static [data-hero-intro-reveal],
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-static .hsp-column-content > *,
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-static .mcl-label,
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-static .customer-brands-carousel,
 	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-complete .hsp-column-media,
 	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-complete [data-hero-intro-reveal],
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-complete .hsp-column-content > *,
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-complete .mcl-label,
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-complete .customer-brands-carousel,
 	html:not(.wf-design-mode) body:has(.hero-spotlight[data-hero-intro="home"].is-hero-intro-static) .navbar,
 	html:not(.wf-design-mode) body:has(.hero-spotlight[data-hero-intro="home"].is-hero-intro-complete) .navbar {
 		opacity: 1;
@@ -49,9 +37,6 @@
 @media screen and (max-width: 767px), (prefers-reduced-motion: reduce) {
 	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"] .hsp-column-media,
 	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"] [data-hero-intro-reveal],
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"] .hsp-column-content > *,
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"] .mcl-label,
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"] .customer-brands-carousel,
 	html:not(.wf-design-mode) body:has(.hero-spotlight[data-hero-intro="home"]) .navbar {
 		opacity: 1;
 		transform: none;
