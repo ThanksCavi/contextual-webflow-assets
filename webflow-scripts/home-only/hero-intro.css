@@ -1,11 +1,15 @@
 /* Hero Lottie Intro */
 @media screen and (min-width: 768px) {
 	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"] .circle-field-canvas {
-		transition: opacity 900ms cubic-bezier(0.16, 1, 0.3, 1);
+		transition: opacity 1400ms cubic-bezier(0.19, 1, 0.22, 1);
 	}
 
-	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"]:not(.is-hero-intro-static):not(.is-hero-intro-complete) .circle-field-canvas {
+	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"]:not(.is-hero-intro-field-visible) .circle-field-canvas {
 		opacity: 0;
+	}
+
+	html:not(.wf-design-mode) .hero-spotlight[data-hero-intro="home"].is-hero-intro-field-visible .circle-field-canvas {
+		opacity: 1;
 	}
 
 	html:not(.wf-design-mode) body:has(.hero-spotlight[data-hero-intro="home"]) .navbar,
@@ -51,6 +55,7 @@
 	html:not(.wf-design-mode) body:has(.hero-spotlight[data-hero-intro="home"]) .navbar {
 		opacity: 1;
 		transform: none;
+		transition: none;
 		animation: none;
 	}
 }
