@@ -50,7 +50,7 @@
     backface-visibility: hidden;
   }
 
-  [data-sa-root].is-sa-ready .sa-intro-arrow {
+  [data-sa-root].is-sa-ready .sa-intro-arrow-embed {
     position: absolute;
     left: 50%;
     top: 0;
@@ -61,7 +61,17 @@
     pointer-events: none;
   }
 
-  [data-sa-root].is-sa-ready .sa-intro-arrow svg {
+  [data-sa-root].is-sa-ready .sa-intro-arrow-embed .sa-intro-arrow {
+    display: block;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    opacity: 1;
+    transform: none;
+    pointer-events: none;
+  }
+
+  [data-sa-root].is-sa-ready .sa-intro-arrow-embed svg {
     display: block;
     width: 100%;
     height: auto;
@@ -229,6 +239,7 @@
 
   [data-sa-mobile-hidden],
   .sa-mobile-hidden,
+  .sa-intro-arrow-embed,
   .sa-intro-arrow {
     display: none !important;
   }
