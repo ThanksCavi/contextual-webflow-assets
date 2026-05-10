@@ -11,6 +11,7 @@
   const OUTCOME_SELECTOR = '.sa-outcome, .outcome';
   const OUTCOME_CARD_SELECTOR = '.sa-outcome-card, .card';
   const END_ARROW_SELECTOR = '.sa-arrows-end';
+  const INTRO_ARROW_EMBED_SELECTOR = '.sa-intro-arrow-embed';
   const INTRO_ARROW_SELECTOR = '.sa-intro-arrow';
   const FINAL_REVEAL_SELECTOR = '[data-sa-card-description]';
   const HEADING_SELECTOR = '.sa-heading';
@@ -94,7 +95,7 @@
       outcome: root.querySelector(OUTCOME_SELECTOR),
       outcomeCard: null,
       endArrow: null,
-      introArrow: root.querySelector(INTRO_ARROW_SELECTOR),
+      introArrow: root.querySelector(INTRO_ARROW_EMBED_SELECTOR) || root.querySelector(INTRO_ARROW_SELECTOR),
       outcomeParent: null,
       outcomeNextSibling: null,
       outcomeSpace: 0,
@@ -517,8 +518,10 @@
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: state.introArrow,
-        start: 'top 82%',
-        once: true,
+        start: 'top 86%',
+        end: 'bottom 58%',
+        scrub: true,
+        invalidateOnRefresh: true,
       },
     });
 
