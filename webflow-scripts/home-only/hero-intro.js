@@ -13,12 +13,14 @@
 	var MOBILE_QUERY = '(max-width: 767px)';
 	var REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 	var READY_TIMEOUT = 5500;
-	var INTRO_HOLD_DURATION = 2000;
-	var LOTTIE_MOVE_DURATION = 1000;
-	var CONTENT_DURATION = 1000;
-	var CONTENT_START_DELAY = 2500;
-	var CONTENT_STAGGER = 95;
-	var EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
+	var INTRO_HOLD_DURATION = 2200;
+	var LOTTIE_MOVE_DURATION = 1250;
+	var FIELD_REVEAL_DELAY = 2500;
+	var CONTENT_DURATION = 1250;
+	var CONTENT_START_DELAY = 2700;
+	var CONTENT_STAGGER = 120;
+	var MOVE_EASE = 'cubic-bezier(0.19, 1, 0.22, 1)';
+	var REVEAL_EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
 
 	function onReady(fn) {
 		if (document.readyState === 'loading') {
@@ -130,6 +132,7 @@
 	function revealStatic(hero, lottieShell, revealElements) {
 		hero.classList.remove('is-hero-intro-running');
 		hero.classList.add('is-hero-intro-static');
+		hero.classList.add('is-hero-intro-field-visible');
 		hero.setAttribute('data-hero-intro-ready', 'static');
 		if (lottieShell) clearInlineStyles(lottieShell, revealElements || []);
 	}
@@ -181,6 +184,10 @@
 		lottieShell.style.transform = startTransform;
 
 		return nextFrame().then(function() {
+			window.setTimeout(function() {
+				hero.classList.add('is-hero-intro-field-visible');
+			}, FIELD_REVEAL_DELAY);
+
 			var animations = [
 				animateElement(lottieShell, [
 					{ transform: startTransform, opacity: 1 },
@@ -188,7 +195,7 @@
 				], {
 					duration: LOTTIE_MOVE_DURATION,
 					delay: INTRO_HOLD_DURATION,
-					easing: EASE,
+					easing: MOVE_EASE,
 					fill: 'forwards'
 				})
 			];
@@ -200,7 +207,7 @@
 				], {
 					duration: CONTENT_DURATION,
 					delay: CONTENT_START_DELAY + index * CONTENT_STAGGER,
-					easing: EASE,
+					easing: REVEAL_EASE,
 					fill: 'forwards'
 				}));
 			});
