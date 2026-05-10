@@ -45,11 +45,6 @@
     margin-inline: auto;
   }
 
-  [data-sa-root].is-sa-ready .sa-heading {
-    will-change: transform, opacity;
-    backface-visibility: hidden;
-  }
-
   [data-sa-root].is-sa-ready .sa-intro-arrow-embed .sa-intro-arrow {
     display: block;
     width: 50%;
@@ -76,8 +71,6 @@
     width: 100%;
     position: relative;
     overflow: visible;
-    will-change: transform;
-    backface-visibility: hidden;
   }
 
   [data-sa-root].is-sa-ready [data-sa-panel] {
