@@ -32,7 +32,7 @@
   let ticking = false;
 
   injectStyles();
-  initAll();
+  onMotionReady(initAll);
 
   window.addEventListener('scroll', queueRender, { passive: true });
   window.addEventListener('resize', handleResize);
@@ -41,16 +41,31 @@
   mobileViewport.addEventListener?.('change', handleResize);
 
   window.CTAEpicenterWipe = {
-    refresh() {
+    refresh(options = {}) {
       instances.forEach(instance => {
         instance.buildKey = '';
         render(instance);
         setupScrollTrigger(instance);
       });
-      refreshScrollTrigger();
+      if (!options.skipGlobalRefresh) {
+        refreshScrollTrigger();
+      }
     },
     instances: instances
   };
+
+  function onMotionReady(callback) {
+    if (window.ContextualHomeMotion?.ready) {
+      window.ContextualHomeMotion.ready.then(callback);
+      return;
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', callback, { once: true });
+    } else {
+      callback();
+    }
+  }
 
   function initAll() {
     document.querySelectorAll('[data-epicenter-wipe][data-wipe-pattern="epicenter"], [data-epicenter-wipe]').forEach(section => {
@@ -335,12 +350,12 @@
     }
 
     instance.scrollTrigger = ScrollTrigger.create({
-      trigger: instance.stage,
+      trigger: instance.section,
       start: 'top top',
       end: () => `+=${getPinDistance(instance)}`,
       scrub: true,
       pin: instance.section,
-      pinSpacing: false,
+      pinSpacing: true,
       anticipatePin: 1,
       invalidateOnRefresh: true,
       onUpdate: self => {
@@ -367,10 +382,27 @@
   }
 
   function getPinDistance(instance) {
-    const stageRect = instance.stage.getBoundingClientRect();
-    const sectionRect = instance.section.getBoundingClientRect();
+    return Math.max(1, Math.round(getStageExtraPixels(instance.stage)));
+  }
 
-    return Math.max(1, Math.round(stageRect.height - sectionRect.height));
+  function getStageExtraPixels(stage) {
+    const value = stage.style.getPropertyValue('--epicenter-stage-extra') || DEFAULT_STAGE_EXTRA;
+    const trimmed = value.trim();
+
+    if (trimmed.endsWith('vh')) {
+      return (parseFloat(trimmed) / 100) * window.innerHeight;
+    }
+
+    if (trimmed.endsWith('vw')) {
+      return (parseFloat(trimmed) / 100) * window.innerWidth;
+    }
+
+    if (trimmed.endsWith('px')) {
+      return parseFloat(trimmed);
+    }
+
+    const numeric = parseFloat(trimmed);
+    return Number.isFinite(numeric) ? numeric : window.innerHeight * 0.88;
   }
 
   function getScrollTrigger() {
@@ -513,6 +545,10 @@ ${SECTION_SELECTOR} [data-epicenter-wipe-button] {
 
 ${STAGE_SELECTOR}[data-epicenter-wipe-static="true"] {
   min-height: auto;
+}
+
+${STAGE_SELECTOR}.is-epicenter-wipe-scrolltrigger {
+  min-height: var(--epicenter-stage-panel-height, 100vh);
 }
 
 ${STAGE_SELECTOR}.is-epicenter-wipe-scrolltrigger ${SECTION_SELECTOR} {

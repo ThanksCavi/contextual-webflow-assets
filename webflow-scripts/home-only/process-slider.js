@@ -20,8 +20,25 @@
   let resizeTimer = null;
   let state = null;
 
-  initProcessSlider();
+  window.ProcessSlider = {
+    refresh: refreshProcessSlider,
+  };
+
+  onMotionReady(initProcessSlider);
   window.addEventListener('resize', queueRefresh);
+
+  function onMotionReady(callback) {
+    if (window.ContextualHomeMotion?.ready) {
+      window.ContextualHomeMotion.ready.then(callback);
+      return;
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', callback, { once: true });
+    } else {
+      callback();
+    }
+  }
 
   function initProcessSlider() {
     if (state) return;
@@ -68,7 +85,7 @@
   }
 
   function prepareAccordion(state) {
-    state.steps.forEach(step => {
+    state.steps.forEach((step) => {
       prepareReveal(step);
       prepareToggle(step, state);
       closeStep(step);
@@ -84,7 +101,7 @@
   function prepareToggle(step, state) {
     step.toggle.type = 'button';
     step.toggle.setAttribute('aria-controls', step.reveal.id);
-    step.toggle.addEventListener('click', event => handleToggleClick(event, step, state));
+    step.toggle.addEventListener('click', (event) => handleToggleClick(event, step, state));
   }
 
   function handleToggleClick(event, step, state) {
@@ -110,7 +127,7 @@
   }
 
   function closeOtherSteps(activeStep, state) {
-    state.steps.forEach(step => {
+    state.steps.forEach((step) => {
       if (step !== activeStep) {
         closeStep(step);
       }
@@ -259,14 +276,14 @@
     return Number.isFinite(paddingTop) ? paddingTop : 0;
   }
 
-  function refreshProcessSlider() {
+  function refreshProcessSlider(options = {}) {
     initProcessSlider();
 
     if (state) {
       setupHorizontalScroll(state);
     }
 
-    if (window.ScrollTrigger) {
+    if (!options.skipGlobalRefresh && window.ScrollTrigger) {
       window.ScrollTrigger.refresh(true);
     }
   }

@@ -8,6 +8,7 @@
   const PANEL_SELECTOR = '[data-sa-panel]';
   const CARD_SELECTOR = '[data-sa-card]';
   const LINE_SELECTOR = '[data-sa-line]';
+  const HEADING_SELECTOR = '.sa-heading';
   const OUTCOME_SELECTOR = '.sa-outcome, .outcome';
   const OUTCOME_CARD_SELECTOR = '.sa-outcome-card, .card';
   const END_ARROW_SELECTOR = '.sa-arrows-end';
@@ -30,6 +31,7 @@
   const DESKTOP_QUERY = '(min-width: 992px) and (prefers-reduced-motion: no-preference)';
   const RESIZE_REFRESH_DELAY_MS = 160;
   const MIN_SCENE_PIN_OFFSET = 24;
+  const HEADING_CLEARANCE_GAP = 24;
 
   const LAYOUT = {
     width: 1280,
@@ -54,10 +56,19 @@
     refresh: refreshAll,
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAll, { once: true });
-  } else {
-    initAll();
+  onMotionReady(initAll);
+
+  function onMotionReady(callback) {
+    if (window.ContextualHomeMotion?.ready) {
+      window.ContextualHomeMotion.ready.then(callback);
+      return;
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', callback, { once: true });
+    } else {
+      callback();
+    }
   }
 
   function initAll() {
@@ -86,6 +97,7 @@
       scene,
       pinFrame,
       pinLayout: sticky.querySelector('.sa-pin-layout') || sticky,
+      heading: root.querySelector(HEADING_SELECTOR),
       panel,
       cards,
       outcome: root.querySelector(OUTCOME_SELECTOR),
@@ -102,6 +114,8 @@
       lineTween: null,
       introLineTween: null,
       outcomeTween: null,
+      headingOriginalMarginBottom: null,
+      headingBaseMarginBottom: null,
       phase: '',
     };
 
@@ -169,6 +183,8 @@
     setDesktopState(state);
 
     const pinTarget = getPinTarget(state);
+    syncHeadingPinClearance(state, pinTarget);
+
     const triggerTarget = pinTarget === state.scene ? state.scene : state.stage;
 
     prepareLines(state, gsap);
@@ -366,14 +382,50 @@
     }
 
     if (pinTarget === state.scene) {
-      const panelHeight = state.panel.getBoundingClientRect().height || state.scene.getBoundingClientRect().height;
-      const centeredOffset = Math.round((window.innerHeight - panelHeight) / 2);
-      const offset = Math.max(MIN_SCENE_PIN_OFFSET, centeredOffset);
-
-      return `top ${offset}px`;
+      return `top ${getScenePinOffset(state)}px`;
     }
 
     return 'top top';
+  }
+
+  function getScenePinOffset(state) {
+    const sceneHeight = state.scene.getBoundingClientRect().height || state.panel.getBoundingClientRect().height;
+    const centeredOffset = Math.round((window.innerHeight - sceneHeight) / 2);
+
+    return Math.max(MIN_SCENE_PIN_OFFSET, centeredOffset);
+  }
+
+  function syncHeadingPinClearance(state, pinTarget) {
+    if (!state.heading || pinTarget !== state.scene) {
+      restoreHeadingMargin(state);
+      return;
+    }
+
+    captureHeadingBaseMargin(state);
+
+    const targetMargin = Math.max(
+      state.headingBaseMarginBottom,
+      getScenePinOffset(state) + HEADING_CLEARANCE_GAP,
+    );
+
+    state.heading.style.marginBottom = `${Math.ceil(targetMargin)}px`;
+  }
+
+  function captureHeadingBaseMargin(state) {
+    if (!state.heading || state.headingBaseMarginBottom !== null) return;
+
+    state.headingOriginalMarginBottom = state.heading.style.marginBottom;
+
+    const marginBottom = parseFloat(getComputedStyle(state.heading).marginBottom);
+    state.headingBaseMarginBottom = Number.isFinite(marginBottom) ? marginBottom : 0;
+  }
+
+  function restoreHeadingMargin(state) {
+    if (!state.heading || state.headingBaseMarginBottom === null) return;
+
+    state.heading.style.marginBottom = state.headingOriginalMarginBottom || '';
+    state.headingOriginalMarginBottom = null;
+    state.headingBaseMarginBottom = null;
   }
 
   function getRootTopOffset(state) {
@@ -758,6 +810,7 @@
     state.cards.bottom.style.removeProperty('--sa-blue-overlay-opacity');
     state.cards.source.style.removeProperty('--sa-blue-overlay-opacity');
     state.pinLayout.style.removeProperty('--sa-outcome-space');
+    restoreHeadingMargin(state);
     state.lines.forEach(line => {
       line.style.pointerEvents = '';
     });
@@ -800,7 +853,7 @@
     setStaticState(state);
   }
 
-  function refreshAll() {
+  function refreshAll(options = {}) {
     initAll();
 
     instances.forEach(state => {
@@ -812,7 +865,7 @@
       setupResponsiveAnimation(state);
     });
 
-    if (window.ScrollTrigger) {
+    if (!options.skipGlobalRefresh && window.ScrollTrigger) {
       window.ScrollTrigger.refresh(true);
     }
   }

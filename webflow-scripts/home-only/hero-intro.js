@@ -12,6 +12,7 @@
 	var LOTTIE_SELECTOR = '[data-lottie-mask]';
 	var MOBILE_QUERY = '(max-width: 767px)';
 	var REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+	var HERO_READY_EVENT = 'contextual:hero-ready';
 	var READY_TIMEOUT = 5500;
 	var INTRO_HOLD_DURATION = 2200;
 	var LOTTIE_MOVE_DURATION = 1350;
@@ -168,6 +169,29 @@
 		hero.classList.add('is-hero-intro-field-visible');
 		hero.setAttribute('data-hero-intro-ready', 'static');
 		if (lottieShell) clearInlineStyles(lottieShell, revealElements || []);
+		dispatchHeroReady(hero, 'static');
+	}
+
+	function dispatchHeroReady(hero, mode) {
+		window.dispatchEvent(new CustomEvent(HERO_READY_EVENT, {
+			detail: {
+				hero: hero,
+				mode: mode
+			}
+		}));
+		if (window.ContextualHomeMotion && typeof window.ContextualHomeMotion.refreshAll === 'function') {
+			window.ContextualHomeMotion.refreshAll();
+		}
+	}
+
+	function shouldSkipIntroForPagePosition(hero) {
+		var currentScroll = Math.max(window.scrollY || window.pageYOffset || 0, 0);
+		if (currentScroll > 2) return true;
+
+		var rect = hero.getBoundingClientRect();
+		var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+
+		return rect.bottom <= 0 || rect.top >= viewportHeight;
 	}
 
 	function getIntroTransform(rect) {
@@ -295,6 +319,7 @@
 			hero.classList.add('is-hero-intro-complete');
 			hero.setAttribute('data-hero-intro-ready', 'complete');
 			clearInlineStyles(lottieShell, revealGroups.all);
+			dispatchHeroReady(hero, 'complete');
 		});
 	}
 
@@ -307,6 +332,11 @@
 		var lottieEl = hero.querySelector(LOTTIE_SELECTOR);
 		var lottieShell = lottieEl && (lottieEl.closest('.lottie-component') || lottieEl);
 		var revealGroups = getRevealGroups(hero);
+
+		if (shouldSkipIntroForPagePosition(hero)) {
+			revealStatic(hero, lottieShell, revealGroups.all);
+			return;
+		}
 
 		if (!lottieEl || !lottieShell || prefersReducedMotion() || isMobileViewport()) {
 			revealStatic(hero, lottieShell, revealGroups.all);
